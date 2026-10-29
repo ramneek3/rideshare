@@ -2,6 +2,7 @@ package org.example.rideshare.service;
 
 import org.example.rideshare.dto.CreateRideRequest;
 import org.example.rideshare.exception.BadRequestException;
+import org.example.rideshare.exception.ForbiddenException;
 import org.example.rideshare.exception.NotFoundException;
 import org.example.rideshare.model.Ride;
 import org.example.rideshare.model.User;
@@ -34,7 +35,7 @@ public class RideService {
                 .orElseThrow(() -> new NotFoundException("User not found"));
 
         if (!"ROLE_USER".equals(user.getRole())) {
-            throw new BadRequestException("Only passengers can create rides");
+            throw new ForbiddenException("Only passengers can create rides");
         }
 
         Ride ride = new Ride();
@@ -77,7 +78,7 @@ public class RideService {
                 .orElseThrow(() -> new NotFoundException("User not found"));
 
         if (!"ROLE_DRIVER".equals(driver.getRole())) {
-            throw new BadRequestException("Only drivers can accept rides");
+            throw new ForbiddenException("Only drivers can accept rides");
         }
 
         Ride ride = rideRepository.findById(rideId)
@@ -93,13 +94,24 @@ public class RideService {
         return rideRepository.save(ride);
     }
 
-    public Ride completeRide(@NonNull String rideId) {
+    public Ride completeRide(@NonNull String rideId, Authentication auth) {
         if (rideId == null || rideId.isEmpty()) {
             throw new BadRequestException("Ride id must not be null or empty");
         }
 
+        if (auth == null || auth.getName() == null) {
+            throw new BadRequestException("Unauthenticated user");
+        }
+
+        User caller = userRepository.findByUsername(auth.getName())
+                .orElseThrow(() -> new NotFoundException("User not found"));
+
         Ride ride = rideRepository.findById(rideId)
                 .orElseThrow(() -> new NotFoundException("Ride not found"));
+
+        if (!caller.getId().equals(ride.getUserId()) && !caller.getId().equals(ride.getDriverId())) {
+            throw new ForbiddenException("Only the ride's passenger or driver can complete it");
+        }
 
         if (!"ACCEPTED".equals(ride.getStatus())) {
             throw new BadRequestException("Ride must be ACCEPTED to complete");

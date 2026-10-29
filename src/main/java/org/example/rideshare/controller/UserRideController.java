@@ -32,7 +32,7 @@ public class UserRideController {
 
     // Complete ride (user or driver)
     @PostMapping("/rides/{id}/complete")
-    public Ride completeRide(@PathVariable String id) {
-        return rideService.completeRide(id);
+    public Ride completeRide(@PathVariable String id, Authentication auth) {
+        return rideService.completeRide(id, auth);
     }
 }

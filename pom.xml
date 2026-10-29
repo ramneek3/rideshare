@@ -16,6 +16,8 @@
         <!-- Java version you want to use -->
         <java.version>17</java.version>
         <spring.boot.version>3.3.3</spring.boot.version>
+        <jjwt.version>0.12.6</jjwt.version>
+        <springdoc.version>2.6.0</springdoc.version>
 
         <!-- These make the compiler plugin happy even without explicit config -->
         <maven.compiler.source>17</maven.compiler.source>
@@ -25,6 +27,15 @@
     <!-- Use Spring Boot BOM for dependency versions -->
     <dependencyManagement>
         <dependencies>
+            <!-- Newer than Boot 3.3's 1.19.x, which Docker Engine 29 rejects (API version too old).
+                 Listed before the Boot BOM so it wins. -->
+            <dependency>
+                <groupId>org.testcontainers</groupId>
+                <artifactId>testcontainers-bom</artifactId>
+                <version>1.21.4</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
             <dependency>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-dependencies</artifactId>
@@ -64,11 +75,30 @@
             <optional>true</optional>
         </dependency>
 
-        <!-- JWT (old jjwt works but uses javax.*; fine for now) -->
+        <!-- JWT: jjwt 0.12 (0.9.x needs javax.xml.bind, which Java 11+ removed) -->
         <dependency>
             <groupId>io.jsonwebtoken</groupId>
-            <artifactId>jjwt</artifactId>
-            <version>0.9.1</version>
+            <artifactId>jjwt-api</artifactId>
+            <version>${jjwt.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-impl</artifactId>
+            <version>${jjwt.version}</version>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-jackson</artifactId>
+            <version>${jjwt.version}</version>
+            <scope>runtime</scope>
+        </dependency>
+
+        <!-- OpenAPI docs + Swagger UI at /swagger-ui.html -->
+        <dependency>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+            <version>${springdoc.version}</version>
         </dependency>
 
         <!-- DevTools (optional) -->
@@ -85,6 +115,27 @@
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <!-- Integration tests run against a real MongoDB in Docker -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-testcontainers</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>mongodb</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
@@ -98,12 +149,34 @@
                     <source>17</source>
                     <target>17</target>
                     <release>17</release>
+                    <!-- Keep parameter names so @PathVariable String id resolves (Spring 6.1+);
+                         spring-boot-starter-parent would normally set this -->
+                    <parameters>true</parameters>
                 </configuration>
             </plugin>
 
+            <!-- Without spring-boot-starter-parent the repackage goal must be bound
+                 explicitly, otherwise the jar has no main manifest and java -jar fails -->
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
+                <version>${spring.boot.version}</version>
+                <configuration>
+                    <mainClass>org.example.rideshare.RideshareApplication</mainClass>
+                    <excludes>
+                        <exclude>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                        </exclude>
+                    </excludes>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>repackage</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
