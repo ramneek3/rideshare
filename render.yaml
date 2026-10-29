@@ -1,0 +1,20 @@
+# Render Blueprint for the RideShare API (free tier).
+# Dashboard → New → Blueprint → pick this repo.
+services:
+  - type: web
+    name: rideshare-api
+    runtime: docker
+    plan: free
+    region: singapore
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    # Public OpenAPI JSON; cheap and needs no auth or database
+    healthCheckPath: /v3/api-docs
+    autoDeploy: true
+    envVars:
+      - key: JWT_SECRET
+        generateValue: true
+      # MongoDB Atlas connection string, e.g.
+      # mongodb+srv://<user>:<password>@<cluster>.mongodb.net/rideshare
+      - key: MONGODB_URI
+        sync: false

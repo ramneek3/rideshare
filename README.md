@@ -133,6 +133,16 @@ curl -X POST http://localhost:8081/api/v1/driver/rides/<RIDE_ID>/accept -H "Auth
 curl -X POST http://localhost:8081/api/v1/rides/<RIDE_ID>/complete -H "Authorization: Bearer <USER_TOKEN>"
 ```
 
+## Deployment (Render + MongoDB Atlas)
+
+`render.yaml` defines a free Docker web service (`Dockerfile`: Maven build stage, JRE 17 runtime as a non-root user).
+
+1. Create a free MongoDB Atlas cluster, a database user, and allow network access from `0.0.0.0/0` (Render's free tier has no fixed outbound IP).
+2. In Render: **New → Blueprint** → this repository. Render generates `JWT_SECRET`.
+3. Set `MONGODB_URI` to the Atlas connection string with the database name, e.g. `mongodb+srv://<user>:<password>@<cluster>.mongodb.net/rideshare`.
+
+Free instances sleep after 15 minutes idle, so the first request can take about a minute.
+
 ## Tests
 
 ```bash
