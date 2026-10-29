@@ -1,5 +1,7 @@
 # RideShare Backend
 
+**Live API docs: [rideshare-api-f72m.onrender.com](https://rideshare-api-f72m.onrender.com)** (Swagger UI; the free instance sleeps when idle, so the first load can take about a minute)
+
 A Spring Boot + MongoDB REST API for a simple ride-booking workflow: passengers request rides, drivers accept them, and either party marks the ride completed. Authentication is stateless JWT with two roles (`ROLE_USER` for passengers, `ROLE_DRIVER` for drivers). Interactive API docs are served with Swagger UI.
 
 ## Tech stack
